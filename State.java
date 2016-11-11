@@ -1,8 +1,9 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class State {
-
-	GuiCell[][] board = new GuiCell[hexgame.BSIZE][hexgame.BSIZE];
+	int bSize = 8;
+	final GuiCell[][] boardz = new GuiCell[bSize][bSize];
 	/* Static Variables */
 	final static int player = -1;
 	final static int free = 0;
@@ -21,27 +22,35 @@ public class State {
 	ArrayList<State> states;
 	ArrayList<State> statesTemp = new ArrayList<State>();
 
-	public State(GuiCell[][] board, State parent, int nextTurn, int level) {
-
-		for (int i = 0; i < hexgame.BSIZE; i++) {
-			for (int j = 0; j < hexgame.BSIZE; j++) {
-				this.board[i][j].setValue(board[i][j].getValue());
-				this.board[i][j].setX(i);
-				this.board[i][j].setY(j);
-				this.board[i][j].setOwner(board[i][j].getOwner());
-			}
+	public static GuiCell[][] copyOf(GuiCell[][] original) {
+		GuiCell[][] copy = new GuiCell[original.length][];
+		for (int i = 0; i < original.length; i++) {
+			copy[i] = Arrays.copyOf(original[i]);
 		}
+		return copy;
+	}
+
+	public State(GuiCell[][] boardz, State parent, int nextTurn, int level) {
+
+		// for (int i = 0; i < bSize; i++) {
+		// for (int j = 0; j < bSize; j++) {
+		// this.board[i][j].setValue(board[i][j].getValue());
+		// this.board[i][j].setX(i);
+		// this.board[i][j].setY(j);
+		// this.board[i][j].setOwner(board[i][j].getOwner());
+		// }
+		// }
+
+		// lifesave etong copy array
+		for (int i = 0; i < boardz.length; i++)
+			for (int j = 0; j < boardz[i].length; j++)
+				this.boardz[i][j] = boardz[i][j];
 
 		this.parentState = parent;
 		this.currentTurn = nextTurn;
 		this.level = level;
 		childrenLeft = level;
 
-	}
-
-	public State(GuiCell[][] guiCells) {
-		board = guiCells;
-		currentTurn = ai;
 	}
 
 	// @Override
@@ -53,7 +62,7 @@ public class State {
 
 	// function to get board
 	public GuiCell[][] getBoard() {
-		return this.board;
+		return this.boardz;
 	}
 
 	public int getLevel() {
@@ -63,9 +72,9 @@ public class State {
 	@Override
 	public boolean equals(Object o) {
 		State s = (State) o;
-		for (int i = 0; i < hexgame.BSIZE; i++) {
-			for (int j = 0; j < hexgame.BSIZE; j++) {
-				if (this.board[i][j].getValue() == s.getBoard()[i][j].getValue()) {
+		for (int i = 0; i < bSize; i++) {
+			for (int j = 0; j < bSize; j++) {
+				if (this.boardz[i][j].getValue() == s.getBoard()[i][j].getValue()) {
 					return false;
 				}
 
@@ -92,9 +101,9 @@ public class State {
 		System.out.println("nagcomputer score");
 
 		int sum = 0;
-		for (int i = 0; i < hexgame.BSIZE; i++) {
-			for (int j = 0; j < hexgame.BSIZE; j++) {
-				if (board[i][j].getOwner() == ai) {
+		for (int i = 0; i < bSize; i++) {
+			for (int j = 0; j < bSize; j++) {
+				if (boardz[i][j].getOwner() == ai) {
 					sum++;
 				}
 			}
@@ -127,9 +136,9 @@ public class State {
 	public void print(GuiCell[][] dummy) {
 
 		System.out.println("tite");
-		for (int j = 0; j < hexgame.BSIZE; j++) {
+		for (int j = 0; j < bSize; j++) {
 			System.out.println();
-			for (int z = 0; z < hexgame.BSIZE; z++) {
+			for (int z = 0; z < bSize; z++) {
 				System.out.print(dummy[j][z].getValue());
 				System.out.print(" | ");
 
@@ -142,45 +151,81 @@ public class State {
 
 		ArrayList<State> states = new ArrayList<State>();
 
-		for (int i = 0; i < hexgame.BSIZE; i++) {
-			for (int j = 0; j < hexgame.BSIZE; j++) {
+		for (int i = 0; i < bSize; i++) {
+			for (int j = 0; j < bSize; j++) {
 
-				if (board[i][j].getOwner() == ai) {
+				if (boardz[i][j].getOwner() == ai) {
 
-					for (int k = 0; k < hexgame.BSIZE; k++) {
-						for (int l = 0; l < hexgame.BSIZE; l++) {
+					int origValue = boardz[i][j].getValue();
+					for (int k = 0; k < bSize; k++) {
+						for (int l = 0; l < bSize; l++) {
 							// 1. left diagonal up 2. left diag down 3. right
 							// diag
 							// up 4. rright diag down 5. horitzontal
 
-							if (board[k][l].getOwner() == free) {
+							if (boardz[k][l].getOwner() == free) {
 								// nasa diagonal sya
 								if (i - k == j - l) {
 									for (int m = j; m > 0; m--) {
 										for (int n = k; n > 0; n--) {
-											if (board[m - 1][n - 1].getOwner() == free) {
+											if (boardz[m - 1][n - 1].getOwner() == free) {
+
+												System.out.println("Orig value: " + origValue);
+
 												if (m - 2 <= 0 || n - 2 <= 0) {
-													for (int transfer = board[n][m].getValue()
-															- 1; transfer > 0; transfer--) {
+													for (int transfer = origValue - 1; transfer > 0; transfer--) {
 
 														System.out.println("Transfer 1");
-														State newState = new State(board, this, player, level + 1);
-														newState.getBoard()[m - 1][n - 1] = new GuiCell(m - 1, n - 1,
-																transfer, ai);
+
+														GuiCell[][] tempBoard = new GuiCell[bSize][bSize];
+
+														for (int copyi = 0; copyi < boardz.length; copyi++)
+															for (int copyj = 0; copyj < boardz[copyi].length; copyj++)
+																tempBoard[copyi][copyj] = boardz[copyi][copyj];
+
+														tempBoard[m - 1][n - 1] = new GuiCell(m - 1, n - 1, transfer,
+																ai);
+														tempBoard[i][j].setValue(origValue - transfer);
+
+														State newState = new State(tempBoard, this, player, level + 1);
 
 														states.add(newState);
 													}
-												} else if (board[n - 2][m - 2].getOwner() == player
-														|| board[n - 2][n - 2].getOwner() == ai) {
-													for (int transfer = board[n][m].getValue()
-															- 1; transfer > 0; transfer--) {
-														State newState = new State(board, this, player, level + 1);
-														newState.getBoard()[m - 1][n - 1] = new GuiCell(m - 1, n - 1,
-																transfer, ai);
-
-														states.add(newState);
-													}
-												}
+												} /*
+													 * else if (board[n - 2][m -
+													 * 2].getOwner() == player
+													 * || board[n - 2][n -
+													 * 2].getOwner() == ai) {
+													 * for (int transfer =
+													 * origValue - 1; transfer >
+													 * 0; transfer--) {
+													 * System.out.
+													 * println("Transfer 1");
+													 * 
+													 * GuiCell[][] tempBoard =
+													 * new
+													 * GuiCell[bSize][bSize];
+													 * 
+													 * for (int copyi = 0; copyi
+													 * < board.length; copyi++)
+													 * for (int copyj = 0; copyj
+													 * < board[copyi].length;
+													 * copyj++)
+													 * tempBoard[copyi][copyj] =
+													 * board[copyi][copyj];
+													 * 
+													 * tempBoard[m - 1][n - 1] =
+													 * new GuiCell(m - 1, n - 1,
+													 * transfer, ai);
+													 * tempBoard[i][j].setValue(
+													 * origValue - transfer);
+													 * 
+													 * State newState = new
+													 * State(tempBoard, this,
+													 * player, level + 1);
+													 * 
+													 * states.add(newState); } }
+													 */
 											}
 
 										}
